@@ -142,6 +142,10 @@ public:
     void delete_alter_task();
     OLAPStatus set_alter_state(AlterTabletState state);
 
+    // message for clone task 
+    bool clone_mode();
+    void set_clone_mode(bool clone_mode);
+
     // meta lock
     inline void obtain_header_rdlock() { _meta_lock.rdlock(); }
     inline void obtain_header_wrlock() { _meta_lock.wrlock(); }

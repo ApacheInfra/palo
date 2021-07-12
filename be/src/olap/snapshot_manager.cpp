@@ -77,7 +77,7 @@ OLAPStatus SnapshotManager::make_snapshot(
     }
 
     TabletSharedPtr ref_tablet = StorageEngine::instance()->tablet_manager()->get_tablet(
-            request.tablet_id, request.schema_hash);
+            request.tablet_id, 0 /*replica_id*/, request.schema_hash);
     if (ref_tablet == nullptr) {
         LOG(WARNING) << "failed to get tablet. tablet=" << request.tablet_id
                      << " schema_hash=" << request.schema_hash;
@@ -122,7 +122,7 @@ OLAPStatus SnapshotManager::release_snapshot(const string& snapshot_path) {
 // TODO support beta rowset
 // For now, alpha and beta rowset meta have same fields, so we can just use
 // AlphaRowsetMeta here.
-OLAPStatus SnapshotManager::convert_rowset_ids(const string& clone_dir, int64_t tablet_id,
+OLAPStatus SnapshotManager::convert_rowset_ids(const string& clone_dir, int64_t tablet_id, int64_t replica_id,
                                                const int32_t& schema_hash) {
     OLAPStatus res = OLAP_SUCCESS;
     // check clone dir existed
@@ -154,6 +154,7 @@ OLAPStatus SnapshotManager::convert_rowset_ids(const string& clone_dir, int64_t 
     // equal to tablet id in meta
     new_tablet_meta_pb.set_tablet_id(tablet_id);
     new_tablet_meta_pb.set_schema_hash(schema_hash);
+    new_tablet_meta_pb.set_replica_id(replica_id);
     TabletSchema tablet_schema;
     tablet_schema.init_from_pb(new_tablet_meta_pb.schema());
 

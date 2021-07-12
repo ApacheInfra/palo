@@ -78,6 +78,7 @@ public:
     OLAPStatus set_alter_state(AlterTabletState alter_state);
 
     inline int64_t related_tablet_id() const { return _related_tablet_id; }
+    inline int64_t related_replica_id() const { return _related_replica_id; }
     inline int32_t related_schema_hash() const { return _related_schema_hash; }
     inline void set_related_tablet_id(int64_t related_tablet_id) {
         _related_tablet_id = related_tablet_id;
@@ -93,6 +94,7 @@ public:
 private:
     AlterTabletState _alter_state = ALTER_PREPARED;
     int64_t _related_tablet_id = 0;
+    int64_t _related_replica_id = 0;
     int32_t _related_schema_hash = 0;
     AlterTabletType _alter_type = SCHEMA_CHANGE;
 };
@@ -112,7 +114,7 @@ public:
                              TabletMetaSharedPtr* tablet_meta);
 
     TabletMeta();
-    TabletMeta(int64_t table_id, int64_t partition_id, int64_t tablet_id, int32_t schema_hash,
+    TabletMeta(int64_t table_id, int64_t partition_id, int64_t tablet_id, int64_t replica_id, int32_t schema_hash,
                uint64_t shard_id, const TTabletSchema& tablet_schema, uint32_t next_unique_id,
                const std::unordered_map<uint32_t, uint32_t>& col_ordinal_to_unique_id,
                TabletUid tablet_uid, TTabletType::type tabletType);
@@ -123,6 +125,7 @@ public:
     OLAPStatus save(const std::string& file_path);
     static OLAPStatus save(const std::string& file_path, const TabletMetaPB& tablet_meta_pb);
     static OLAPStatus reset_tablet_uid(const std::string& file_path);
+    static OLAPStatus reset_tablet_replica_id(const std::string& file_path, int64_t replica_id);
     static std::string construct_header_file_path(const std::string& schema_hash_path,
                                                   int64_t tablet_id);
     OLAPStatus save_meta(DataDir* data_dir);
@@ -140,6 +143,7 @@ public:
     inline int64_t table_id() const;
     inline int64_t partition_id() const;
     inline int64_t tablet_id() const;
+    inline int64_t replica_id() const;
     inline int32_t schema_hash() const;
     inline int16_t shard_id() const;
     inline void set_shard_id(int32_t shard_id);
@@ -159,6 +163,9 @@ public:
 
     inline bool in_restore_mode() const;
     inline void set_in_restore_mode(bool in_restore_mode);
+
+    bool in_clone_mode() const;
+    void set_in_clone_mode(bool in_clone_mode);
 
     inline const TabletSchema& tablet_schema() const;
 
@@ -215,6 +222,7 @@ private:
     int64_t _table_id = 0;
     int64_t _partition_id = 0;
     int64_t _tablet_id = 0;
+    int64_t _replica_id = 0;
     int32_t _schema_hash = 0;
     int32_t _shard_id = 0;
     int64_t _creation_time = 0;
@@ -234,6 +242,7 @@ private:
     DelPredicateArray _del_pred_array;
     AlterTabletTaskSharedPtr _alter_task;
     bool _in_restore_mode = false;
+    bool _in_clone_mode = false;
     RowsetTypePB _preferred_rowset_type = ALPHA_ROWSET;
 
     RWMutex _meta_lock;
@@ -255,6 +264,10 @@ inline int64_t TabletMeta::partition_id() const {
 
 inline int64_t TabletMeta::tablet_id() const {
     return _tablet_id;
+}
+
+inline int64_t TabletMeta::replica_id() const {
+    return _replica_id;
 }
 
 inline int32_t TabletMeta::schema_hash() const {
@@ -319,6 +332,14 @@ inline bool TabletMeta::in_restore_mode() const {
 
 inline void TabletMeta::set_in_restore_mode(bool in_restore_mode) {
     _in_restore_mode = in_restore_mode;
+}
+
+inline bool TabletMeta::in_clone_mode() const {
+    return _in_clone_mode;
+}
+
+inline void TabletMeta::set_in_clone_mode(bool in_clone_mode) {
+    _in_clone_mode = in_clone_mode;
 }
 
 inline const TabletSchema& TabletMeta::tablet_schema() const {

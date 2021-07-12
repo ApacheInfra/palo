@@ -118,7 +118,7 @@ OLAPStatus PushHandler::_do_streaming_ingestion(TabletSharedPtr tablet, const TP
                       << ", related_schema_hash=" << related_schema_hash
                       << ", transaction_id=" << request.transaction_id;
             TabletSharedPtr related_tablet =
-                    StorageEngine::instance()->tablet_manager()->get_tablet(related_tablet_id,
+                    StorageEngine::instance()->tablet_manager()->get_tablet(related_tablet_id, 0 /*replica_id*/,
                                                                             related_schema_hash);
 
             // if related tablet not exists, only push current tablet

@@ -718,6 +718,14 @@ OLAPStatus Tablet::set_alter_state(AlterTabletState state) {
     return _tablet_meta->set_alter_state(state);
 }
 
+bool Tablet::clone_mode() {
+    return _tablet_meta->in_clone_mode();
+}
+
+void Tablet::set_clone_mode(bool clone_mode) {
+    _tablet_meta->set_in_clone_mode(clone_mode);
+}
+
 bool Tablet::can_do_compaction() {
     // 如果table正在做schema change，则通过选路判断数据是否转换完成
     // 如果选路成功，则转换完成，可以进行compaction
@@ -1287,6 +1295,7 @@ void Tablet::build_tablet_report_info(TTabletInfo* tablet_info) {
     tablet_info->__set_version_count(_tablet_meta->version_count());
     tablet_info->__set_path_hash(_data_dir->path_hash());
     tablet_info->__set_is_in_memory(_tablet_meta->tablet_schema().is_in_memory());
+    tablet_info->__set_replica_id(_tablet_meta->replica_id());
 }
 
 // should use this method to get a copy of current tablet meta

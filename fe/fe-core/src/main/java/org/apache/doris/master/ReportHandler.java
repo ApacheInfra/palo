@@ -587,7 +587,7 @@ public class ReportHandler extends Daemon {
                                     Set<String> bfColumns = olapTable.getCopiedBfColumns();
                                     double bfFpp = olapTable.getBfFpp();
                                     CreateReplicaTask createReplicaTask = new CreateReplicaTask(backendId, dbId,
-                                            tableId, partitionId, indexId, tabletId, indexMeta.getShortKeyColumnCount(),
+                                            tableId, partitionId, indexId, tabletId, replica.getId(), indexMeta.getShortKeyColumnCount(),
                                             indexMeta.getSchemaHash(), partition.getVisibleVersion(),
                                             partition.getVisibleVersionHash(), indexMeta.getKeysType(),
                                             TStorageType.COLUMN,
@@ -685,7 +685,8 @@ public class ReportHandler extends Daemon {
 
                 if (needDelete) {
                     // drop replica
-                    DropReplicaTask task = new DropReplicaTask(backendId, tabletId, backendTabletInfo.getSchemaHash());
+                    DropReplicaTask task = new DropReplicaTask(backendId, tabletId, backendTabletInfo.getReplicaId(),
+                            backendTabletInfo.getSchemaHash());
                     batchTask.addTask(task);
                     LOG.warn("delete tablet[" + tabletId + " - " + backendTabletInfo.getSchemaHash()
                             + "] from backend[" + backendId + "] because not found in meta");
@@ -697,8 +698,10 @@ public class ReportHandler extends Daemon {
                 // this tablet is found in meta but with invalid schema hash.
                 // delete it.
                 int schemaHash = foundTabletsWithInvalidSchema.get(tabletId).getSchemaHash();
-                DropReplicaTask task = new DropReplicaTask(backendId, tabletId, schemaHash);
-                batchTask.addTask(task);
+                for (TTabletInfo backendTabletInfo : backendTablet.getTabletInfos()) {
+                    DropReplicaTask task = new DropReplicaTask(backendId, tabletId, backendTabletInfo.getReplicaId(), schemaHash);
+                    batchTask.addTask(task);
+                }
                 LOG.warn("delete tablet[" + tabletId + " - " + schemaHash + "] from backend[" + backendId
                         + "] because invalid schema hash");
                 ++deleteFromBackendCounter;

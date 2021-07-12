@@ -226,7 +226,7 @@ Status SnapshotLoader::download(const std::map<std::string, std::string>& src_to
         }
 
         TabletSharedPtr tablet =
-                _env->storage_engine()->tablet_manager()->get_tablet(local_tablet_id, schema_hash);
+                _env->storage_engine()->tablet_manager()->get_tablet(local_tablet_id, 0 /*replica_id*/, schema_hash);
         if (tablet == nullptr) {
             std::stringstream ss;
             ss << "failed to get local tablet: " << local_tablet_id;
@@ -362,6 +362,7 @@ Status SnapshotLoader::move(const std::string& snapshot_path, TabletSharedPtr ta
                             bool overwrite) {
     std::string tablet_path = tablet->tablet_path();
     std::string store_path = tablet->data_dir()->path();
+    int64_t replica_id = tablet->replica_id();
     LOG(INFO) << "begin to move snapshot files. from: " << snapshot_path << ", to: " << tablet_path
               << ", store: " << store_path << ", job: " << _job_id << ", task id: " << _task_id;
 
@@ -412,7 +413,7 @@ Status SnapshotLoader::move(const std::string& snapshot_path, TabletSharedPtr ta
 
     // rename the rowset ids and tabletid info in rowset meta
     OLAPStatus convert_status =
-            SnapshotManager::instance()->convert_rowset_ids(snapshot_path, tablet_id, schema_hash);
+            SnapshotManager::instance()->convert_rowset_ids(snapshot_path, tablet_id, replica_id, schema_hash);
     if (convert_status != OLAP_SUCCESS) {
         std::stringstream ss;
         ss << "failed to convert rowsetids in snapshot: " << snapshot_path

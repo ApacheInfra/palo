@@ -34,6 +34,7 @@ OLAPStatus EngineStorageMigrationTask::execute() {
 
 OLAPStatus EngineStorageMigrationTask::_migrate() {
     int64_t tablet_id = _tablet->tablet_id();
+    int64_t replica_id = _tablet->replica_id();
     int32_t schema_hash = _tablet->schema_hash();
     LOG(INFO) << "begin to process tablet migrate. "
               << "tablet_id=" << tablet_id << ", dest_store=" << _dest_store->path();
@@ -141,7 +142,7 @@ OLAPStatus EngineStorageMigrationTask::_migrate() {
         }
         // it will change rowset id and its create time
         // rowset create time is useful when load tablet from meta to check which tablet is the tablet to load
-        res = SnapshotManager::instance()->convert_rowset_ids(full_path, tablet_id, schema_hash);
+        res = SnapshotManager::instance()->convert_rowset_ids(full_path, tablet_id, replica_id, schema_hash);
         if (res != OLAP_SUCCESS) {
             LOG(WARNING) << "failed to convert rowset id when do storage migration"
                          << " path = " << full_path;
@@ -159,7 +160,7 @@ OLAPStatus EngineStorageMigrationTask::_migrate() {
         // if old tablet finished schema change, then the schema change status of the new tablet is DONE
         // else the schema change status of the new tablet is FAILED
         TabletSharedPtr new_tablet =
-                StorageEngine::instance()->tablet_manager()->get_tablet(tablet_id, schema_hash);
+                StorageEngine::instance()->tablet_manager()->get_tablet(tablet_id, 0 /*replica_id*/, schema_hash);
         if (new_tablet == nullptr) {
             LOG(WARNING) << "tablet not found. tablet_id=" << tablet_id
                          << " schema_hash=" << schema_hash;
